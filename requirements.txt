@@ -1,0 +1,6 @@
+# 이모티콘 검수 도구 전용 의존성
+# (tkinter 는 파이썬 표준 라이브러리라 설치 불필요)
+Pillow>=10.0
+
+# exe 빌드할 때만 필요 (개발 PC):
+#   pip install pyinstaller
