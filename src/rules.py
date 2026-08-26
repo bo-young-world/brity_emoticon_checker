@@ -122,20 +122,51 @@ def _check_info_texts(en_name: str, info: dict, out: List[Finding]) -> None:
 
 
 def _check_structure(device_dir: Path, out: List[Finding]) -> None:
-    for rel in ("group/large", "group/small"):
+    # v02: group/large, group/small 뿐 아니라 대화방(large/small) 폴더도 필수.
+    #   (안의 이미지 파일 자체는 여전히 선택 — _check_chat_files 참고)
+    for rel in ("group/large", "group/small", "large", "small"):
         if not (device_dir / rel).is_dir():
             out.append(Finding(FAIL, "구조", rel, "필수 폴더 없음"))
         else:
             out.append(Finding(PASS, "구조", rel, "폴더 있음"))
-    # 대화방 폴더(large/small)는 선택 — 있으면 통과 표시만
-    for rel in ("large", "small"):
-        if (device_dir / rel).is_dir():
-            out.append(Finding(PASS, "구조", rel, "대화방 폴더 있음"))
 
     expected_top = {"group", "large", "small"}
     for d in device_dir.iterdir():
         if d.is_dir() and d.name not in expected_top and not _is_junk(d):
             out.append(Finding(WARN, "구조", d.name, "규격에 없는 폴더 — 필요한지 확인"))
+
+    _check_group_depth(device_dir, out)
+
+
+def _check_group_depth(device_dir: Path, out: List[Finding]) -> None:
+    """group 폴더 하위 뎁스 검사 (v02).
+
+    - group 바로 밑에 파일이 있으면 FAIL (group/large 또는 group/small 안에 있어야 함)
+    - group 바로 밑에 large/small 이 아닌 폴더가 있으면 FAIL
+    - group/large, group/small 안에 또 하위 폴더가 있으면 FAIL (이미지 파일만 있어야 함)
+    """
+    gdir = device_dir / "group"
+    if not gdir.is_dir():
+        return  # 이미 위에서 FAIL 처리됨
+
+    for item in gdir.iterdir():
+        if _is_junk(item):
+            continue
+        if item.is_file():
+            out.append(Finding(FAIL, "구조", f"group/{item.name}",
+                               "group 폴더 바로 밑에 파일이 있음 — group/large 또는 group/small 안에 있어야 함"))
+        elif item.is_dir() and item.name not in ("large", "small"):
+            out.append(Finding(FAIL, "구조", f"group/{item.name}",
+                               "group 폴더 밑에 예상치 못한 하위 폴더 — large/small 만 허용"))
+
+    for sub in ("large", "small"):
+        sdir = gdir / sub
+        if not sdir.is_dir():
+            continue
+        for item in sdir.iterdir():
+            if item.is_dir() and not _is_junk(item):
+                out.append(Finding(FAIL, "구조", f"group/{sub}/{item.name}",
+                                   f"group/{sub} 안에 폴더가 있음(깊이 오류) — 이미지 파일만 있어야 함"))
 
 
 def _check_group_files(device: str, en_name: str, device_dir: Path, out: List[Finding]) -> None:

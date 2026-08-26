@@ -8,7 +8,7 @@ PyInstaller 로 단일 exe 를 만들어 배포하므로 **대상 PC 에 Python 
 | 항목 | 내용 | 판정 |
 |------|------|------|
 | 전체 용량(합계) | 선택한 상위 폴더(MOBILE+DESKTOP) 전체 용량을 결과 맨 위에 **KB** 로 표시 | 정보 |
-| 구조 | `[MOBILE]/[DESKTOP] 영문명` > `group/large·small`(필수), `large·small`(대화방, 선택) | FAIL |
+| 구조 | `[MOBILE]/[DESKTOP] 영문명` > `group/large·small`, `large·small`(대화방) **모두 필수**. group 하위 뎁스 오류(바로 밑 파일, large/small 외 폴더, large·small 안의 하위 폴더)도 감지 | FAIL |
 | 파일명 | 전부 소문자 + **영문/숫자/언더바만**(특수문자 불가, 공백도 불가). group PNG 4종은 `영문명_tab_normal.png` 등 고정, 대화방은 제안서와 동일하면 자유. **[파일명 공백 수정]** 버튼으로 공백→언더바 일괄 자동 치환 가능(파일명·폴더명) | FAIL |
 | 필수 파일 | group 폴더 PNG 4종 존재 (tab_normal/tab_hover/list_thumb/detail_thumb) | FAIL |
 | 이미지 크기 | PRD 규격 표의 px 와 픽셀 단위 대조 | FAIL |
@@ -25,7 +25,6 @@ PyInstaller 로 단일 exe 를 만들어 배포하므로 **대상 PC 에 Python 
   가능(이모지 불가), 파일명·폴더 영문명은 소문자/숫자/언더바만
 - v01: **외곽선(색상/두께) 검사는 삭제**되었습니다 (group 4종 + 대화방 이미지 전체)
 - 규격 수치가 바뀌면 `src/spec.py` 만 수정하면 된다
-- 폴더 구조 자체(누락·오배치)에 대한 정밀 FAIL 검사는 **TBD — 2차 개발 예정**
 
 ## 사용법
 
