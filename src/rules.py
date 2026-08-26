@@ -299,16 +299,16 @@ def _check_background_presence(f: Path, rel: str, out: List[Finding]) -> None:
 
 
 def _check_chat_files(device: str, en_name: str, device_dir: Path, out: List[Finding]) -> None:
-    """대화방 이미지 — 없어도 되고(선택) 개수 제한 없음. 있으면 규격 검사.
+    """대화방 이미지 — large/small 폴더마다 최소 spec.CHAT_FILES_MIN 개 필수 (v03).
 
-    파일명은 제안서와 동일하면 되고 형식(숫자 위치 등)은 자유 — 정렬용일 뿐.
-    프로그램은 파일명 문자 규칙(소문자/숫자/언더바)과 이미지 규격만 검사한다.
+    파일명은 "{영문명}_숫자.png|gif" 형식만 허용한다 (예: en_name=happy → happy_01.gif).
     """
+    name_re = re.compile(rf"^{re.escape(en_name)}_\d+$")
     counts = {}
     for sub in ("large", "small"):
         cdir = device_dir / sub
         if not cdir.is_dir():
-            continue
+            continue  # 폴더 자체가 없는 건 _check_structure 에서 이미 FAIL 처리
         files = [f for f in sorted(cdir.iterdir()) if f.is_file() and not _is_junk(f)]
         names = []
         for f in files:
@@ -319,10 +319,10 @@ def _check_chat_files(device: str, en_name: str, device_dir: Path, out: List[Fin
             if f.name != f.name.lower():
                 out.append(Finding(FAIL, "파일명", rel, "파일명에 대문자 포함 — 모두 소문자"))
                 continue
-            if not _STEM_RE.match(f.stem):
-                bad = sorted({ch for ch in f.stem if not re.match(r"[a-z0-9_]", ch)})
+            if not name_re.match(f.stem):
                 out.append(Finding(FAIL, "파일명", rel,
-                                   f"허용되지 않는 문자 {bad} 포함 — 영문 소문자/숫자/언더바만 가능"))
+                                   f"파일명 형식 오류 — '{en_name}_숫자.png|gif' 형식이어야 함 "
+                                   f"(예: {en_name}_01.png)"))
                 continue
             names.append(f.name)
 
@@ -340,6 +340,12 @@ def _check_chat_files(device: str, en_name: str, device_dir: Path, out: List[Fin
                 _check_gif_loop(f, rel, out)
 
         counts[sub] = sorted(names)
+        n = len(names)
+        if n < spec.CHAT_FILES_MIN:
+            out.append(Finding(FAIL, "파일", sub,
+                               f"대화방 이미지 {n}개 — 최소 {spec.CHAT_FILES_MIN}개 필요"))
+        else:
+            out.append(Finding(PASS, "파일", sub, f"대화방 이미지 {n}개 (≥{spec.CHAT_FILES_MIN})"))
 
     if counts.get("large") is not None and counts.get("small") is not None:
         if counts["large"] != counts["small"]:
@@ -348,8 +354,6 @@ def _check_chat_files(device: str, en_name: str, device_dir: Path, out: List[Fin
             out.append(Finding(WARN, "파일", "large/small",
                                "대화방 이미지 구성이 다름 — "
                                f"large에만: {sorted(only_l) or '없음'} / small에만: {sorted(only_s) or '없음'}"))
-    if not any(counts.values()):
-        out.append(Finding(PASS, "파일", "대화방", "대화방 이미지 없음 (선택 사항 — 통과)"))
 
 
 def _check_gif_loop(f: Path, rel: str, out: List[Finding]) -> None:

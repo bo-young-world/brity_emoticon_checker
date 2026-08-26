@@ -39,13 +39,15 @@ GROUP_FILES = {
     },
 }
 
-# 대화방 이미지 (영문명_두자리.gif|png) 크기.
-#   ※ 대화방 이미지는 없어도 되고(선택), 개수 제한도 없다.
+# 대화방 이미지 (영문명_숫자.gif|png) 크기.
+#   v03: 대화방 이미지는 더 이상 선택이 아니다 — large/small 폴더마다 최소
+#   CHAT_FILES_MIN 개 필요, 파일명은 "{영문명}_숫자.png|gif" 형식을 따라야 한다.
 CHAT_SIZES = {
     "mobile":  {"large": (200, 200), "small": (72, 72)},
     "desktop": {"large": (84, 84),   "small": (26, 26)},
 }
 CHAT_EXTENSIONS = (".gif", ".png")
+CHAT_FILES_MIN = 10   # large/small 폴더 각각 최소 파일 개수
 
 # 여백 규정 (px) — 콘텐츠(캐릭터) 경계에서 이미지 가장자리까지의 최소 여백.
 #   모바일 탭은 배경이 투명이라 알파 채널로, 데스크탑은 단색 배경이라

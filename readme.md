@@ -9,7 +9,7 @@ PyInstaller 로 단일 exe 를 만들어 배포하므로 **대상 PC 에 Python 
 |------|------|------|
 | 전체 용량(합계) | 선택한 상위 폴더(MOBILE+DESKTOP) 전체 용량을 결과 맨 위에 **KB** 로 표시 | 정보 |
 | 구조 | `[MOBILE]/[DESKTOP] 영문명` > `group/large·small`, `large·small`(대화방) **모두 필수**. group 하위 뎁스 오류(바로 밑 파일, large/small 외 폴더, large·small 안의 하위 폴더)도 감지 | FAIL |
-| 파일명 | 전부 소문자 + **영문/숫자/언더바만**(특수문자 불가, 공백도 불가). group PNG 4종은 `영문명_tab_normal.png` 등 고정, 대화방은 제안서와 동일하면 자유. **[파일명 공백 수정]** 버튼으로 공백→언더바 일괄 자동 치환 가능(파일명·폴더명) | FAIL |
+| 파일명 | 전부 소문자 + **영문/숫자/언더바만**(특수문자 불가, 공백도 불가). group PNG 4종은 `영문명_tab_normal.png` 등 고정, 대화방은 `영문명_숫자.png|gif` 형식 고정(v03). **[파일명 공백 수정]** 버튼으로 공백→언더바 일괄 자동 치환 가능(파일명·폴더명) | FAIL |
 | 필수 파일 | group 폴더 PNG 4종 존재 (tab_normal/tab_hover/list_thumb/detail_thumb) | FAIL |
 | 이미지 크기 | PRD 규격 표의 px 와 픽셀 단위 대조 | FAIL |
 | GIF 반복 | 4회 재생 후 멈춤 (무한 반복 = FAIL) | FAIL/WARN |
@@ -20,7 +20,8 @@ PyInstaller 로 단일 exe 를 만들어 배포하므로 **대상 PC 에 Python 
 | 불필요 파일 | .DS_Store, __MACOSX, Thumbs.db 등 탐지 + 원클릭 삭제 | WARN |
 | 정보 | 국문명 20자 / 영문명 20자 / 설명 120자 + **이모지 사용 불가** (GUI 입력 시) | FAIL |
 
-- 대화방 GIF 는 **없어도 되고 개수 제한 없음** (있으면 규격 검사)
+- 대화방 이미지는 **large/small 각각 최소 10개 필수**(v03, 미만이면 FAIL),
+  파일명은 `{영문명}_숫자.png|gif` 형식만 허용(그 외 형식은 FAIL)
 - **표시명과 파일명은 별개** — 표시명(예: "KKKK Keuala : Reboot")은 대문자·일반 특수문자
   가능(이모지 불가), 파일명·폴더 영문명은 소문자/숫자/언더바만
 - v01: **외곽선(색상/두께) 검사는 삭제**되었습니다 (group 4종 + 대화방 이미지 전체)
