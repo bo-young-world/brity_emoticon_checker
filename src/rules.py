@@ -57,6 +57,15 @@ def find_device_folders(root: Path) -> List[Path]:
     )
 
 
+def total_size_kb(folders: List[Path]) -> float:
+    """선택한 디바이스 폴더들(예: MOBILE+DESKTOP) 전체 파일 용량 합계 (KB).
+
+    검수 결과 맨 처음에 표시하는 참고용 요약 — 디바이스 폴더별 2MB FAIL 판정과는 별개.
+    """
+    total = sum(f.stat().st_size for d in folders for f in d.rglob("*") if f.is_file())
+    return total / 1024
+
+
 # ------------------------------------------------------------------ 검사들 --
 
 def _is_junk(path: Path) -> bool:
@@ -172,10 +181,9 @@ def _check_group_files(device: str, en_name: str, device_dir: Path, out: List[Fi
             if required_margin is not None:
                 _check_margin(f, rel, required_margin, out)
 
-            # 외곽선 색 규정 파일: 경계 안쪽 링 색 실측
-            expected_outline = spec.OUTLINE_COLORS.get(device, {}).get(suffix)
-            if expected_outline:
-                _check_outline_color(f, rel, expected_outline, out)
+            # 배경 있음/없음 자동 판정 파일(detail_thumb): 고정 색상 대신 상태만 WARN 공지
+            if suffix in spec.BACKGROUND_CHECK_FILES:
+                _check_background_presence(f, rel, out)
 
         for extra in found.values():
             out.append(Finding(WARN, "파일", f"group/{sub}/{extra.name}",
@@ -212,50 +220,6 @@ def _content_margins(f: Path) -> Optional[Tuple[int, int, int, int]]:
         return None
 
 
-def _hex_to_rgb(h: str) -> Tuple[int, int, int]:
-    h = h.lstrip("#")
-    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
-
-
-def _outline_color(f: Path) -> Optional[Tuple[int, int, int]]:
-    """외곽선(콘텐츠 경계 안쪽 1px 링) 색의 채널별 중앙값. 측정 불가 시 None.
-
-    가장 바깥 픽셀은 안티앨리어싱으로 배경과 섞여 있어, 한 픽셀 안쪽 링을 샘플링한다.
-    """
-    try:
-        from PIL import ImageChops, ImageFilter
-        with Image.open(f) as im:
-            rgba = im.convert("RGBA")
-        mask = _content_mask(rgba)
-        er1 = mask.filter(ImageFilter.MinFilter(3))   # 1px 침식
-        er2 = er1.filter(ImageFilter.MinFilter(3))    # 2px 침식
-        ring = ImageChops.subtract(er1, er2)          # 경계 1px 안쪽 링
-        ring_data = ring.getdata()
-        rgba_data = rgba.getdata()
-        px = [rgba_data[i][:3] for i, v in enumerate(ring_data) if v]
-        if len(px) < 10:
-            return None
-        med = tuple(sorted(ch[i] for ch in px)[len(px) // 2] for i in range(3))
-        return med
-    except Exception:
-        return None
-
-
-def _check_outline_color(f: Path, rel: str, expected_hex: str, out: List[Finding]) -> None:
-    measured = _outline_color(f)
-    if measured is None:
-        return  # 외곽선 영역을 못 찾으면 조용히 생략 (눈검수)
-    expected = _hex_to_rgb(expected_hex)
-    diff = max(abs(a - b) for a, b in zip(measured, expected))
-    mhex = "#%02X%02X%02X" % measured
-    if diff <= spec.OUTLINE_TOLERANCE:
-        out.append(Finding(PASS, "외곽선", rel, f"외곽선 색 OK — 실측 {mhex} ≈ 규정 {expected_hex}"))
-    else:
-        out.append(Finding(WARN, "외곽선", rel,
-                           f"외곽선 색 확인 필요 — 실측 {mhex} vs 규정 {expected_hex} "
-                           f"(채널 차이 {diff}) — 미리보기로 확인"))
-
-
 def _check_margin(f: Path, rel: str, required: int, out: List[Finding]) -> None:
     margins = _content_margins(f)
     if margins is None:
@@ -283,6 +247,24 @@ def _check_transparency(f: Path, rel: str, out: List[Finding]) -> None:
             out.append(Finding(PASS, "투명배경", rel, "투명 배경 OK"))
     except Exception as e:
         out.append(Finding(WARN, "투명배경", rel, f"검사 실패: {e}"))
+
+
+def _check_background_presence(f: Path, rel: str, out: List[Finding]) -> None:
+    """`_detail_thumb.png` 전용 — 배경 있음/없음만 자동 판정해 WARN 으로 공지한다.
+
+    v01: 고정 배경색 규정을 없애고, 알파 채널 최솟값으로 완전 투명(=배경 없음) 여부만
+    판단한다. FAIL 이 아니라 상태 공지용 WARN — 실제 화면은 눈으로 확인한다.
+    """
+    try:
+        with Image.open(f) as im:
+            rgba = im.convert("RGBA")
+            alpha_min = rgba.getchannel("A").getextrema()[0]
+        if alpha_min == 255:
+            out.append(Finding(WARN, "배경", rel, "배경색 있음 — 눈으로 확인"))
+        else:
+            out.append(Finding(WARN, "배경", rel, "배경색 없음(투명) — 눈으로 확인"))
+    except Exception as e:
+        out.append(Finding(WARN, "배경", rel, f"검사 실패: {e}"))
 
 
 def _check_chat_files(device: str, en_name: str, device_dir: Path, out: List[Finding]) -> None:
@@ -325,7 +307,6 @@ def _check_chat_files(device: str, en_name: str, device_dir: Path, out: List[Fin
 
             if f.suffix.lower() == ".gif":
                 _check_gif_loop(f, rel, out)
-            _check_outline_color(f, rel, spec.CHAT_OUTLINE_COLOR, out)
 
         counts[sub] = sorted(names)
 
@@ -378,6 +359,33 @@ def find_junk_files(device_dir: Path) -> List[Path]:
         if _is_junk(f):
             junk.append(f)
     return junk
+
+
+def find_space_named(device_dir: Path) -> List[Path]:
+    """이름(파일명·폴더명)에 공백이 포함된 항목 목록 (자동 정리 후보).
+
+    깊은 경로부터 오도록 정렬 — rename_spaces_to_underscore() 가 하위 항목을 먼저
+    바꿔야 상위 폴더 이름이 바뀌어도 나머지 경로가 깨지지 않는다.
+    """
+    items = [p for p in device_dir.rglob("*") if " " in p.name]
+    return sorted(items, key=lambda p: len(p.parts), reverse=True)
+
+
+def rename_spaces_to_underscore(device_dir: Path) -> List[Tuple[Path, Path]]:
+    """이름에 공백이 있는 파일·폴더를 실제로 찾아 공백을 언더바(_)로 치환한다.
+
+    find_space_named() 순서(깊은 경로 우선)대로 처리해, 상위 폴더명이 바뀌어도
+    이미 처리된 하위 항목의 경로 문제가 생기지 않는다.
+    반환: [(변경 전 경로, 변경 후 경로), ...]
+    """
+    renamed = []
+    for p in find_space_named(device_dir):
+        new_path = p.with_name(p.name.replace(" ", "_"))
+        if new_path.exists():
+            continue  # 이름 충돌 — 건너뛰고 수동 확인 필요
+        p.rename(new_path)
+        renamed.append((p, new_path))
+    return renamed
 
 
 def _check_junk_and_size(device_dir: Path, out: List[Finding]) -> None:

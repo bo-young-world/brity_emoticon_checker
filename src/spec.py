@@ -65,31 +65,19 @@ MARGIN_SPECS = {
 }
 MARGIN_TOLERANCE = 1  # ±1px 허용
 
-# 외곽선(테두리) 색 규정 — 콘텐츠 경계 안쪽 1px 링의 색 중앙값과 대조 (측정 기반 WARN)
-#   규격 표에 색이 명시된 파일만 검사. (모바일 tab_hover 는 표에 미명시 — tab_normal 과
-#   동일 규격으로 보이면 아래에 "_tab_hover.png": "#A5A5A5" 를 추가)
-OUTLINE_COLORS = {
-    "mobile": {
-        "_tab_normal.png": "#A5A5A5",
-        "_detail_thumb.png": "#FFFFFF",
-    },
-    "desktop": {
-        "_tab_normal.png": "#999999",
-        "_tab_hover.png": "#999999",
-        "_list_thumb.png": "#999999",
-        "_detail_thumb.png": "#999999",
-    },
-}
-# 대화방 이미지 외곽선: 다크모드 대비용 흰색 테두리
-CHAT_OUTLINE_COLOR = "#FFFFFF"
-# 채널(R/G/B)당 허용 오차 — 안티앨리어싱/그림자 감안
-OUTLINE_TOLERANCE = 40
+# v01: 외곽선(테두리) 색 규정은 삭제되었다 (group 4종 + 대화방 이미지 전체,
+#   Mobile/Desktop 공통). 관련 상수(OUTLINE_COLORS/CHAT_OUTLINE_COLOR/OUTLINE_TOLERANCE)와
+#   검사 로직(rules.py 의 _check_outline_color 등)을 함께 제거했다.
 
 # 배경이 '투명'으로 규정된 파일 (mobile group 탭 이미지) — 알파 채널 검사 대상
 TRANSPARENT_BG_FILES = {
     "mobile": ("_tab_normal.png", "_tab_hover.png"),
     "desktop": (),  # 데스크탑 탭은 배경색 지정(#E5E5E5 등)이라 투명 검사 제외
 }
+
+# v01: `_detail_thumb.png` 는 배경색을 고정 규정하지 않고, 배경 있음/없음 상태만
+#   알파 채널로 자동 판정해 WARN 으로 공지한다 (Mobile/Desktop, large/small 공통).
+BACKGROUND_CHECK_FILES = ("_detail_thumb.png",)
 
 # GIF 반복 재생: "4회 재생 후 멈춤".
 #   GIF loop 메타데이터는 저장 도구에 따라 3(추가반복) 또는 4(총횟수)로 기록될 수 있어

@@ -19,7 +19,8 @@ from pathlib import Path
 
 from src.rules import (FAIL, PASS, WARN, Finding, _content_margins,
                        check_device_folder, find_device_folders,
-                       find_junk_files, parse_device_folder, summarize)
+                       find_junk_files, find_space_named, parse_device_folder,
+                       rename_spaces_to_underscore, summarize, total_size_kb)
 from src.report import default_report_path, write_report
 from src import spec
 
@@ -49,6 +50,8 @@ def run_cli(target: str, csv_path: str | None) -> int:
     if not folders:
         print("검수 대상([MOBILE]/[DESKTOP] 폴더)을 찾지 못했습니다.", file=sys.stderr)
         return 2
+
+    print(f"전체 용량(합계): {total_size_kb(folders):,.1f}KB")
 
     results = {}
     total_fail = 0
@@ -133,6 +136,8 @@ def run_gui(initial_folder: str | None = None) -> None:
     csv_btn.pack(side="left", padx=6)
     junk_btn = ttk.Button(btns, text="불필요 파일 삭제")
     junk_btn.pack(side="left")
+    space_btn = ttk.Button(btns, text="파일명 공백 수정")
+    space_btn.pack(side="left", padx=6)
     show_pass_var = tk.BooleanVar(value=False)
     show_pass_chk = ttk.Checkbutton(btns, text="통과 항목도 표시", variable=show_pass_var)
     show_pass_chk.pack(side="left", padx=12)
@@ -484,6 +489,11 @@ def run_gui(initial_folder: str | None = None) -> None:
         tree.delete(*tree.get_children())
         clear_preview()
 
+        # 맨 처음에 전체 용량(KB) 요약 — 선택한 상위 폴더(MOBILE+DESKTOP) 합산, 판정 없는 정보성 행
+        total_kb = total_size_kb(folders)
+        tree.insert("", "end", text="",
+                    values=("정보", "용량", "전체(합계)", f"{total_kb:,.1f}KB"))
+
         # 진행바 최대치: 대략 파일 수 + 고정 검사 수 (정확할 필요는 없음)
         approx = sum(1 for d in folders for f in d.rglob("*") if f.is_file()) + len(folders) * 10
         progress.configure(maximum=max(approx, 1), value=0)
@@ -524,9 +534,26 @@ def run_gui(initial_folder: str | None = None) -> None:
                 pass
         messagebox.showinfo(APP_TITLE, "삭제 완료. 다시 검수를 실행해 확인하세요.")
 
+    def fix_spaces():
+        if not state["folders"]:
+            messagebox.showwarning(APP_TITLE, "먼저 검수를 실행하세요.")
+            return
+        targets = [s for d in state["folders"] for s in find_space_named(d)]
+        if not targets:
+            messagebox.showinfo(APP_TITLE, "이름에 공백이 있는 파일·폴더가 없습니다.")
+            return
+        names = "\n".join(f" - {t.name}" for t in targets[:15]) + ("\n …" if len(targets) > 15 else "")
+        if not messagebox.askyesno(APP_TITLE,
+                                   f"이름에 공백이 있는 파일·폴더 {len(targets)}건을 "
+                                   f"언더바(_)로 바꿀까요?\n\n{names}"):
+            return
+        total_renamed = sum(len(rename_spaces_to_underscore(d)) for d in state["folders"])
+        messagebox.showinfo(APP_TITLE, f"{total_renamed}건 변경 완료. 다시 검수를 실행해 확인하세요.")
+
     run_btn.configure(command=run_check)
     csv_btn.configure(command=save_csv)
     junk_btn.configure(command=delete_junk)
+    space_btn.configure(command=fix_spaces)
 
     clear_preview()
     if initial_folder:  # 실행 인자로 폴더가 오면 자동 검수 시작
