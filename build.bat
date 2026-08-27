@@ -2,7 +2,7 @@
 rem ============================================================
 rem  Emoticon checker - build single exe (run on online dev PC)
 rem  Requires: pip install pyinstaller
-rem  Output  : dist\emoticon_checker.exe
+rem  Output  : dist\emoticon_checker_v{버전}.exe (버전은 emoticon_checker.py 의 APP_VERSION)
 rem ============================================================
 cd /d "%~dp0"
 
@@ -25,5 +25,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo [OK] build done: dist\emoticon_checker.exe
+echo [OK] build done: dist\emoticon_checker_v{버전}.exe  (버전은 emoticon_checker.py 의 APP_VERSION 참고)
 pause
