@@ -79,14 +79,13 @@ pip install -r requirements.txt
 # 개발 중 실행
 python emoticon_checker.py
 
-# exe 빌드 → dist\emoticon_checker_v{버전}.exe 생성 (버전은 APP_VERSION 자동 반영)
+# exe 빌드 → dist\emoticon_checker.exe 생성
 build.bat
 ```
 
 ## 배포 (오프라인 PC)
 
-`dist\emoticon_checker_v{버전}.exe` **파일 하나만 복사**하면 끝. Python·pip 불필요.
-재빌드해도 기존 exe는 덮어쓰지 않고 버전이 다른 파일로 남는다.
+`dist\emoticon_checker.exe` **파일 하나만 복사**하면 끝. Python·pip 불필요.
 
 > 서명 없는 자체 제작 exe 라 보안 프로그램이 첫 실행을 차단할 수 있음.
 > 차단되면 IT 예외 등록 필요.
