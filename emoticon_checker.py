@@ -33,7 +33,7 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 APP_TITLE = "이모티콘 검수 도구"
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.3.0"  # v01~v03 요구사항 반영 (요구사항_v01/v02/v03.md 참고)
 
 LEVEL_COLORS = {FAIL: "#c62828", WARN: "#b26a00", PASS: "#2e7d32"}
 LEVEL_LABELS = {FAIL: "불합격", WARN: "확인 필요", PASS: "통과"}
