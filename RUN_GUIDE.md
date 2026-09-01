@@ -51,10 +51,12 @@ python emoticon_checker.py --check "C:\작업\[MOBILE] happy" --csv output\결�
 ```powershell
 cd brity_automation_emoticon
 pip install Pillow pyinstaller   # 최초 1회
-build.bat                        # → dist\emoticon_checker.exe 생성
+build.bat                        # → dist\emoticon_checker_v{버전}.exe 생성 (예: emoticon_checker_v0.3.0.exe)
 ```
 
-생성된 `dist\emoticon_checker.exe` 파일 **하나만** 검수 PC 에 복사하면 배포 끝.
+파일명에 `emoticon_checker.py` 의 `APP_VERSION` 이 자동으로 붙어서, 재빌드해도 기존 exe를
+덮어쓰지 않고 새 버전 파일이 따로 생긴다 (구버전을 최신으로 착각하는 실수 방지).
+생성된 `dist\emoticon_checker_v{버전}.exe` 파일 **하나만** 검수 PC 에 복사하면 배포 끝.
 
 ## 문제 해결
 
